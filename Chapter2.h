@@ -12,3 +12,4 @@ Matrix3d rotx(double Theta);
 Matrix3d roty(double Theta);
 Matrix3d rotz(double Theta);
 Vector3d tr2eul(Matrix3d R);
+Matrix3d oa2r(Vector3d o, Vector3d a);
