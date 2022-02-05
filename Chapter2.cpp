@@ -175,3 +175,13 @@ Vector3d tr2rpy(Matrix3d R, string order) {
 	}
 	return rpy;
 }
+
+Matrix3d oa2r(Vector3d o, Vector3d a) {
+	Vector3d n = o.cross(a);
+	o = a.cross(n);
+	Matrix3d R;
+	R.col(0) << n(0) / abs(n.sum()), n(1) / abs(n.sum()), n(2) / abs(n.sum());
+	R.col(1) << o(0) / abs(o.sum()), o(1) / abs(o.sum()), o(2) / abs(o.sum());
+	R.col(2) << a(0) / abs(a.sum()), a(1) / abs(a.sum()), a(2) / abs(a.sum());
+	return R;
+}
