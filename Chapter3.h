@@ -448,3 +448,26 @@ ArrayXXd mstraj(ArrayXXd segments, ArrayXd qdmax, ArrayXd tsegment, ArrayXd q0, 
 
 	return R;
 }
+
+ArrayXd transl(Matrix4d x) {
+	// ishomog
+	if (abs(x.block(0,0,3,3).determinant() - 1) < 10e-10)
+		return x.col(3).segment(0, 3);
+	else {
+		return Array3d::Zero();
+	}
+}
+
+ArrayXd tr2delta(Matrix4d A, Matrix4d B) {
+	ArrayXd delta;
+	Matrix4d TD = A.inverse() * B;
+
+	ArrayXd a1 = transl(TD);
+	ArrayXd a2 = vex(t2r(TD) - MatrixXd::Identity(3, 3));
+
+	delta = ArrayXd(a1.size() + a2.size());
+	delta.segment(0, a1.size()) = a1;
+	delta.segment(a1.size(), a2.size()) = a2;
+
+	return delta;
+}
