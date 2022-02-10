@@ -1,0 +1,43 @@
+#include <Eigen/Core>
+#include <Eigen/Dense>
+#include <cmath>
+#include <iostream>
+
+using namespace std;
+using namespace Eigen;
+
+// 房间温度在25摄氏度左右，测量误差为正负0.5摄氏度，方差0.25，R = 0.25。Q = 0.01, A = 1, T = 1, H = 1。
+// 假定快时刻的温度值、测量值为23.9摄氏度，房间真实温度为24摄氏度，
+//温度计在该时刻测量值为24.5摄氏度，偏差为0.4摄氏度。利用k - 1时刻温度值测量第k时刻的温度，其预计偏差为:
+// P(k | k - 1) = P(k - 1) + Q = 0.02
+// 卡尔曼增益k = P(k | k - 1) / (P(k | k - 1) + R) = 0.0741
+// X(k) = 23.9 + 0.0741*(24.1 - 23.9) = 23.915摄氏度。
+// k时刻的偏差为P(k) = (1 - K * H)P(k | k - 1) = 0.0186。
+// 最后由X(k)和P(k)得出Z(k + 1)。
+
+
+ArrayXd KF1() {
+	int N = 120; // 循环次数
+	ArrayXd X(N), Xkf(N), Z(N), P(N);
+	X(0) = 25.1; //
+	P(0) = 0.01; //
+	Z(0) = 24.9; //
+	Xkf(0) = Z(0);
+	double Q = 0.01; double R = 0.25; // W(k) 的方差 V(k) 的方差
+	ArrayXd W = sqrt(Q) * Eigen::ArrayXd::Random(N);
+	ArrayXd V = sqrt(R) * Eigen::ArrayXd::Random(N);
+
+	double F = 1.0; double G = 1.0; double H = 1.0; MatrixXd I = MatrixXd::Identity(1, 1);
+	for (int kk = 1; kk < N; kk++) {
+		X(kk) = F * X(kk - 1) + G * W(kk - 1); // 实际的
+		Z(kk) = H * X(kk - 1) + V(kk); // 实际的
+		double X_pre = F * Xkf(kk - 1); // 状态预测部分
+		double P_pre = F * P(kk - 1) * F + Q; // 协方差矩阵预测
+		double Kg = P_pre * 1.0 / (H * P_pre * H + R); // 1x1的元素求逆矩阵 卡尔曼增益更新
+		double e = Z(kk) - H * X_pre; // 增益系数更新
+		Xkf(kk) = X_pre + Kg * e; // 状态更新
+		P(kk) = (I(0, 0) - Kg * H)*P_pre; // 协方差矩阵更新
+	}
+
+	return Xkf; // 返回卡尔曼预测
+}
