@@ -13,6 +13,7 @@ class Link {
 
 	}
 public:
+	bool isrevolute = false;
 	double alpha;
 	double a;
 	double theta;
