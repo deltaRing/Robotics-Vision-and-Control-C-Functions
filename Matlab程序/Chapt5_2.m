@@ -1,0 +1,2 @@
+map = makemap(100)
+
