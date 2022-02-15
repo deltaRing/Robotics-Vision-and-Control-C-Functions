@@ -42,3 +42,36 @@ Matrix3d eul2jac(double phi, double theta, double psi) {
 	J << 0, -sin(phi), cos(phi)*sin(theta), 0, cos(phi), sin(phi), sin(theta), 1, 0, cos(theta);
 	return J;
 }
+
+// MP逆求解
+MatrixXd pinv(MatrixXd T) {
+	MatrixXd TT;
+	JacobiSVD<MatrixXd> svd(T, ComputeThinU | ComputeThinV);
+	MatrixXd U = svd.matrixU();
+	MatrixXd V = svd.matrixV();
+	MatrixXd A = svd.singularValues();
+
+	int max_size = T.rows() > T.cols() ? T.rows() : T.cols();
+	double tol = max_size * 10e-13;
+	int r1 = 0;
+	for (int ii = 0; ii < A.rows(); ii++) if (A(ii, 0) > tol) r1++;
+
+	MatrixXd _V_(V.rows(), r1);
+	MatrixXd _U_(U.rows(), r1);
+	MatrixXd _s_(r1, 1);
+
+	for (int ii = 0; ii < r1; ii++) {
+		_V_.col(ii) = V.col(ii);
+		_U_.col(ii) = U.col(ii);
+		_s_(ii, 0) = A(ii, 0);
+	}
+
+	MatrixXd __s__ = 1.0 / _s_.array();
+	TT = MatrixXd(_V_.rows(), __s__.rows());
+	for (int ii = 0; ii < __s__.rows(); ii++) {
+		TT.col(ii) = (_V_.array() * __s__(ii, 0)).matrix();
+	}
+	TT = TT * _U_.transpose();
+
+	return TT;
+}
