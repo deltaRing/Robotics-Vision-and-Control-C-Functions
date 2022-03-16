@@ -1,0 +1,161 @@
+import numpy as np
+import random
+
+action_space = 4
+action = [0, 1, 2, 3] # 上下左右
+state_space = 3
+state = [0, 1, 2] # 状态：无，地狱，天堂
+reward = [0, -10, -1, 10] # 奖励：无，地狱的惩罚，不动的惩罚，天堂奖励
+map = np.zeros([4, 4]) # 地图大小
+smx = 4
+smy = 4
+# 地图尺寸
+hell = -1
+heaven = 1
+# 状态符号
+q_table_ = np.zeros([smx, smy, action_space])
+# q表格
+greed = 0.99
+# 贪心概率
+
+# q表初始化
+def q_table_init():
+    q_table_ = np.zeros([smx, smy, action_space])
+
+# 选择行为
+def choose_action(q_table, locx, locy):
+    if np.random.uniform() > greed:
+        a = np.where(q_table[locx][locy] == q_table[locx][locy].max())
+        a = list(a)
+        a = a[0]
+        a = np.random.choice(a)
+        return a # 贪婪行为
+    else:
+        return np.random.randint(action_space) # 探索
+
+# 环境初始化
+def env_init():
+    map[1][1] = hell
+    map[2][1] = hell
+    map[1][2] = hell
+    map[2][2] = heaven
+    map[3][3] = heaven
+
+# 返回位置 奖励 是否完成
+def execute_action(a, loc_x, loc_y):
+    if a == action[0]: # 向上走
+        if loc_x <= 0:
+            return loc_x, loc_y, reward[2], False
+        new_lx = loc_x - 1
+        new_ly = loc_y
+        r = reward[2]
+        done = False
+        s = map[new_lx][new_ly]
+        if s == hell:
+            done = True
+            r = reward[1]
+        elif s == heaven:
+            done = True
+            r = reward[3]
+        else:
+            r = reward[0]
+        return new_lx, new_ly, r, done
+    elif a == action[1]: # 向下走
+        if loc_x >= smx - 1:
+            return loc_x, loc_y, reward[2], False
+        new_lx = loc_x + 1
+        new_ly = loc_y
+        r = reward[2]
+        done = False
+        s = map[new_lx][new_ly]
+        if s == hell:
+            done = True
+            r = reward[1]
+        elif s == heaven:
+            done = True
+            r = reward[3]
+        else:
+            r = reward[0]
+        return new_lx, new_ly, r, done
+    elif a == action[2]: # 向左走
+        if loc_y <= 0:
+            return loc_x, loc_y, reward[2], False
+        new_lx = loc_x
+        new_ly = loc_y - 1
+        r = reward[2]
+        done = False
+        s = map[new_lx][new_ly]
+        if s == hell:
+            done = True
+            r = reward[1]
+        elif s == heaven:
+            done = True
+            r = reward[3]
+        else:
+            r = reward[0]
+        return new_lx, new_ly, r, done
+    elif a == action[3]: # 向右走
+        if loc_y >= smy - 1:
+            return loc_x, loc_y, reward[2], False
+        new_lx = loc_x
+        new_ly = loc_y + 1
+        r = reward[2]
+        done = False
+        s = map[new_lx][new_ly]
+        if s == hell:
+            done = True
+            r = reward[1]
+        elif s == heaven:
+            done = True
+            r = reward[3]
+        else:
+            r = reward[0]
+        return new_lx, new_ly, r, done
+    else:
+        return loc_x, loc_y, reward[2], False # 无效行为
+
+def update_q_table(done, reward, locx, locy, action):
+    alpha = 0.1
+    if done:
+        q_target = reward
+        q_predict = q_table_[locx][locy][action]
+        q_table_[locx][locy][action] += alpha * (q_target - q_predict)
+    else:
+        gamma = 0.9
+        q_target = reward + gamma * q_table_[locx][locy][action]
+        q_predict = q_table_[locx][locy][action]
+        q_table_[locx][locy][action] += alpha * (q_target - q_predict)
+
+def rl():
+    global greed
+    found_heaven = 0
+    for ii in range(10000):
+        done = False
+        env_init()
+        agent_loc_x = 0
+        agent_loc_y = 0
+        used_iter = 0
+        total_iter = 0
+
+        if ii < 300:
+            greed = 0.01
+            found_heaven = 0
+        while not done:
+            used_iter += 1
+            ori_x, ori_y = agent_loc_x, agent_loc_y # 记录原始的位置
+            a = choose_action(q_table_, agent_loc_x, agent_loc_y) # 选择行为
+            agent_loc_x, agent_loc_y, r, done = execute_action(a, agent_loc_x, agent_loc_y)
+            update_q_table(done, r, ori_x, ori_y, a) # 更新Q表
+            if r == 10:
+                found_heaven += 1
+            # print(q_table_)
+            print("Agent Location: " + str(agent_loc_x) + " " + str(agent_loc_y))
+            print("Reward: " + str(r))
+            print("Action: " + str(a))
+        print("Iter: " + str(used_iter))
+        print("New ENV....")
+        total_iter += used_iter
+    print(found_heaven)
+
+rl()
+print(q_table_)
